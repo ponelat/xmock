@@ -1,0 +1,26 @@
+{
+  "name": "xmock",
+  "version": "0.1.0",
+  "description": "express-like xhr/http mocking tool built on top of faux-jax",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ponelat/xmock.git"
+  },
+  "keywords": [
+    "http",
+    "xhr",
+    "mock",
+    "test",
+    "mocha"
+  ],
+  "author": "Josh Ponelat",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ponelat/xmock/issues"
+  },
+  "homepage": "https://github.com/ponelat/xmock#readme"
+}
