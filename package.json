@@ -4,7 +4,8 @@
   "description": "express-like xhr/http mocking tool built on top of faux-jax",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha -c test/**/*.js",
+    "watch": "watch-run -ip '**/*.js' npm run test"
   },
   "repository": {
     "type": "git",
@@ -22,5 +23,15 @@
   "bugs": {
     "url": "https://github.com/ponelat/xmock/issues"
   },
-  "homepage": "https://github.com/ponelat/xmock#readme"
+  "homepage": "https://github.com/ponelat/xmock#readme",
+  "dependencies": {
+    "faux-jax": "^4.1.0",
+    "path-to-regexp": "^1.2.1"
+  },
+  "devDependencies": {
+    "chai": "^3.4.0",
+    "mocha": "^2.3.3",
+    "superagent": "^1.4.0",
+    "watch-run": "^1.2.2"
+  }
 }
