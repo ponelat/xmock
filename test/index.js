@@ -6,6 +6,8 @@ var async = require('async')
 
 var xapp = xmock()
 
+var METHODS = ['get', 'put', 'post', 'delete', 'options', 'patch'] 
+
 describe('xmock', function() {
 
   describe('basics', function(){
@@ -181,16 +183,18 @@ describe('xmock', function() {
 
     })
 
-    it('should have shortcut methods for get,put,post,delete,options', function(done){
+    it('should have shortcut methods for ' + METHODS.join(','), function(done){
 
       var callers = []
-      var methods = ['get', 'put', 'post', 'delete', 'options', 'patch'] 
 
-      methods.forEach(function(method) {
+      METHODS.forEach(function(method) {
+
+        // Add listener
         xapp[method]('/api', function (req,res,next) {
-          res.status(200).send({method: method})
+          res.status(200).send({method: method+'-eh!'})
         })
 
+        // Add "requester"
         callers.push(
           function(cb) {
 
@@ -199,16 +203,12 @@ describe('xmock', function() {
 
             request[method]('/api').end(function(err,res){
               if(err) done(err)
-                expect(res.body).to.deep.equal({method: method})
+                expect(res.body).to.deep.equal({method: method+'-eh!'})
               cb()
             })
 
           }
         )
-      })
-
-      xapp.use('/api', function(req,res,next) {
-        res.status(200).send({method: 'missing'})
       })
 
       async.series(callers, done)
