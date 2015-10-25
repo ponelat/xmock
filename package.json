@@ -1,7 +1,7 @@
 {
   "name": "xmock",
   "version": "0.1.0",
-  "description": "express-like xhr/http mocking tool built on top of faux-jax",
+  "description": "express-like, http/xhr mocking, without a server",
   "main": "index.js",
   "scripts": {
     "test": "mocha -c test/**/*.js",
