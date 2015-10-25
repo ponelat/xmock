@@ -372,5 +372,14 @@ describe('xmock', function() {
     })
   })
 
+  describe.skip('implement (TODO)', function () {
+    it('should have res.type(): json -> application/json', function(){
+    })
+    it('should have res.route(): independantly managed middleware', function(){
+    })
+    it('should have res.all(): path -> #get(fn), #put(fn), etc', function(){
+    })
+  })
+
 })
 
