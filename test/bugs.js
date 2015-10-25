@@ -6,7 +6,7 @@ var async = require('async')
 
 var tooManyListeners = 4
 
-describe.only('xmock - bugs', function() {
+describe('xmock - bugs', function() {
 
   before(function(){
     var self = this

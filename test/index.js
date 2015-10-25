@@ -76,6 +76,35 @@ describe('xmock', function() {
 
     })
 
+    it('should restore mock\'d out http internals', function(done){
+
+      var self = this
+      this.xapp.restore()
+
+      request.get('/api').end(function(err, res) {
+        if(err) {
+          return tryRequest()
+        }
+        done(new Error('Expected a ECONNREFUSED'))
+      })
+
+      function tryRequest() {
+        self.xapp.install()
+
+        self.xapp.use(function(req,res,next) {
+          res.status(200).send({})
+        })
+
+        request.get('/api').end(function(err, res) {
+          if(err) { return done(err) }
+          expect(res.ok).to.equal(true)
+          done()
+        })
+      }
+
+
+    })
+
   })
 
   describe('middleware', function(){

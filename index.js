@@ -34,8 +34,7 @@ function setupFauxJax(cb) {
 function XMock() {
   this._callbacks = []
   this._requestListener = null
-  this._fauxJax = fauxJax
-  this.listenToFauxJax()
+  this.install()
 }
 
 ['get', 'put', 'post', 'options', 'delete', 'patch' ].forEach(function(method, i){
@@ -66,10 +65,18 @@ XMock.prototype.reset = function(fn) {
   this._callbacks = []
 }
 
+XMock.prototype.restore = function() {
+  fauxJax.restore()
+}
+
+XMock.prototype.install = function() {
+  this.listenToFauxJax()
+}
+
 XMock.prototype.listenToFauxJax = function() {
   var self = this
   if(this._requestListener) {
-    fauxJax.removeListener(this._requestListener)
+    fauxJax.removeListener('request', this._requestListener)
   }
   this._requestListener = setupFauxJax(function(req,res) {
     self.dispatch(req,res)
