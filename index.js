@@ -52,15 +52,16 @@ XMock.prototype.listenToFauxJax = function() {
   if(this._listener) {
     fauxJax.removeListener(this._listener)
   }
-  this._listener = setupFauxJax(function(req,res) { self.dispatch(req,res) })
+  this._listener = setupFauxJax(function(req,res) { 
+    self.dispatch(req,res) 
+  })
 }
 
 XMock.prototype.fallback = function(req,res) {
   if(this._unhandled) {
     return this._unhandled(req,res)
   }
-  throw new Error('Unhandled request in xmock')
-  // req.respond(404, {}, 'ERR')
+  throw new Error('Unhandled request in xmock: ' + req.method.toUpperCase() + ' ' +req.url)
 }
 
 XMock.prototype.use = function(first, second) {
