@@ -229,7 +229,29 @@ describe('xmock', function() {
 
     })
 
+  })
+
+  describe('paramters', function(){
+
+    beforeEach(function(){
+      xapp.reset()
+    })
+
+    it('should set parameters from express-like path', function(done){
+
+      xapp.use('/some/:one/:two', function(req,res,next) {
+        res.status(200).send(req.params)
+      })
+
+      request.get('/some/thing/todo', function(err,res) {
+        if(err) done(err)
+        expect(res.body).to.deep.equal({one: 'thing', two: 'todo'})
+        done()
+      })
+
+    })
 
   })
+
 })
 
