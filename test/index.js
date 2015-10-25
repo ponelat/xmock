@@ -4,11 +4,21 @@ var request = require('superagent')
 var fauxJax = require('faux-jax')
 var async = require('async')
 
-var xapp = xmock()
-
 var METHODS = ['get', 'put', 'post', 'delete', 'options', 'patch']
 
 describe('xmock', function() {
+
+  before(function(){
+    this.xapp = xmock()
+  })
+
+  after(function(){
+    this.xapp.reset()
+  })
+
+  beforeEach(function(){
+    this.xapp.reset()
+  })
 
   describe('basics', function(){
     it('should throw if no body', function(done){
@@ -17,7 +27,7 @@ describe('xmock', function() {
         done(new Error('Should have thown an error'))
       })
 
-      xapp.use(function(req,res,next){
+      this.xapp.use(function(req,res,next){
         try {
           res.status(201).send('')
         } catch(e) {
@@ -31,11 +41,11 @@ describe('xmock', function() {
 
     it('should not have zombie middleware', function(done){
 
-      xapp.use(function(req,res,next){
+      this.xapp.use(function(req,res,next){
         res.status(201).send('...')
       })
 
-      xapp.reset()
+      this.xapp.reset()
 
       request.get('/api').end(function(err, res) {
         if(err) {done(err)}
@@ -43,7 +53,7 @@ describe('xmock', function() {
         done()
       })
 
-      xapp.use(function(req,res,next){
+      this.xapp.use(function(req,res,next){
         res.status(202).send({})
       })
 
@@ -51,7 +61,7 @@ describe('xmock', function() {
 
     it('should return a response', function(done){
 
-      xapp.reset()
+      this.xapp.reset()
 
       request.get('/api').end(function(err, res) {
         if(err) {done(err)}
@@ -60,7 +70,7 @@ describe('xmock', function() {
         done()
       })
 
-      xapp.use(function(req,res,next){
+      this.xapp.use(function(req,res,next){
         res.status(201).send({hello: true})
       })
 
@@ -71,7 +81,7 @@ describe('xmock', function() {
   describe('middleware', function(){
 
     beforeEach(function(){
-      xapp.reset()
+      this.xapp.reset()
     })
 
     it('should allow chaining', function(done){
@@ -81,12 +91,12 @@ describe('xmock', function() {
         if(err) done(err)
       })
 
-      xapp.use(function(req,res,next){
+      this.xapp.use(function(req,res,next){
         res.body = {yup: true}
         next()
       })
 
-      xapp.use(function(req,res){
+      this.xapp.use(function(req,res){
         expect(res.body).to.deep.equal({yup: true})
         done()
       })
@@ -100,7 +110,7 @@ describe('xmock', function() {
         if(err) done(err)
       })
 
-      xapp.use('/some'
+      this.xapp.use('/some'
         , function(req,res,next){
 
             res.body = {yes: true}
@@ -123,7 +133,7 @@ describe('xmock', function() {
   describe('path matching', function(){
 
     beforeEach(function(){
-      xapp.reset()
+      this.xapp.reset()
     })
 
     it('should match a path', function(done){
@@ -135,11 +145,11 @@ describe('xmock', function() {
         done()
       })
 
-      xapp.use('/wrong', function(req,res,next){
+      this.xapp.use('/wrong', function(req,res,next){
         res.status(300).send({hello: false})
       })
 
-      xapp.use('/right', function(req,res,next){
+      this.xapp.use('/right', function(req,res,next){
         res.status(200).send({hello: true})
       })
 
@@ -154,11 +164,11 @@ describe('xmock', function() {
         done()
       })
 
-      xapp.use('/right', function(req,res,next){
+      this.xapp.use('/right', function(req,res,next){
         res.status(300).send({hello: false})
       })
 
-      xapp.use('http://google.com/right', function(req,res,next){
+      this.xapp.use('http://google.com/right', function(req,res,next){
         res.status(200).send({hello: true})
       })
 
@@ -166,7 +176,7 @@ describe('xmock', function() {
 
     it('should match a regex expression', function(done){
 
-      xapp.use(/\/josh[0-9]+/, function(req,res,next) {
+      this.xapp.use(/\/josh[0-9]+/, function(req,res,next) {
         res.status(200).send({success: true})
       })
 
@@ -187,11 +197,11 @@ describe('xmock', function() {
         done()
       })
 
-      xapp.use( '/hello', 'get', function(req,res,next ){
+      this.xapp.use( '/hello', 'get', function(req,res,next ){
         res.status(400).send({hello: false})
       })
 
-      xapp.use('/hello', 'put', function(req,res,next){
+      this.xapp.use('/hello', 'put', function(req,res,next){
         res.status(200).send({hello: true})
       })
 
@@ -200,11 +210,12 @@ describe('xmock', function() {
     it('should have shortcut methods for ' + METHODS.join(','), function(done){
 
       var callers = []
+      var self = this
 
       METHODS.forEach(function(method) {
 
         // Add listener
-        xapp[method]('/api', function (req,res,next) {
+        self.xapp[method]('/api', function (req,res,next) {
           res.status(200).send({method: method+'-eh!'})
         })
 
@@ -234,12 +245,12 @@ describe('xmock', function() {
   describe('parameters', function(){
 
     beforeEach(function(){
-      xapp.reset()
+      this.xapp.reset()
     })
 
     it('should set parameters from express-like path', function(done){
 
-      xapp.use('/some/:one/:two', function(req,res,next) {
+      this.xapp.use('/some/:one/:two', function(req,res,next) {
         res.status(200).send(req.params)
       })
 
@@ -253,7 +264,7 @@ describe('xmock', function() {
 
     it('should handle regexp params too', function(done){
 
-      xapp.use(/\/one(two)(three)/, function(req,res,next) {
+      this.xapp.use(/\/one(two)(three)/, function(req,res,next) {
         res.status(200).send(req.params)
       })
 
@@ -265,6 +276,11 @@ describe('xmock', function() {
 
     })
 
+  })
+
+  describe('subsets of listeners', function(){
+    it.skip('should allow a subset of the listeners to be reset/crud\'d', function(){
+    })
   })
 
 })

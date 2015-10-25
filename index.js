@@ -2,11 +2,39 @@ var fauxJax = require('faux-jax')
 var pathToRegexp = require('path-to-regexp')
 var urlApi = require('url')
 
-module.exports = XMock
+module.exports = xmock
+
+var singleton
+function xmock() {
+  if(!singleton) {
+    singleton = new XMock()
+  }
+  return singleton
+}
+
+// ===== functions
+
+function setupFauxJax(cb) {
+  if(!fauxJax._installed) {
+    fauxJax.install()
+  }
+
+  var listener = function(req) {
+    var end = function() { req.respond.apply(req, arguments) }
+    cb(req, new Response(end))
+  }
+
+  fauxJax.on('request', listener)
+  return listener
+}
+
+
+// ========= Classes
 
 function XMock() {
-  if(!(this instanceof XMock)) { return new XMock() }
   this._callbacks = []
+  this._requestListener = null
+  this._fauxJax = fauxJax
   this.listenToFauxJax()
 }
 
@@ -34,33 +62,17 @@ function XMock() {
 
 })
 
-function setupFauxJax(cb) {
-  if(!fauxJax._installed) {
-    fauxJax.install()
-  }
-
-  var listener = function(req) {
-    var end = function() { req.respond.apply(req, arguments) }
-    cb(req, new Response(end))
-  }
-
-  fauxJax.on('request', listener) 
-  return listener
-}
-
-
 XMock.prototype.reset = function(fn) {
   this._callbacks = []
 }
 
-
 XMock.prototype.listenToFauxJax = function() {
   var self = this
-  if(this._listener) {
-    fauxJax.removeListener(this._listener)
+  if(this._requestListener) {
+    fauxJax.removeListener(this._requestListener)
   }
-  this._listener = setupFauxJax(function(req,res) { 
-    self.dispatch(req,res) 
+  this._requestListener = setupFauxJax(function(req,res) {
+    self.dispatch(req,res)
   })
 }
 
