@@ -6,7 +6,7 @@ var async = require('async')
 
 var xapp = xmock()
 
-var METHODS = ['get', 'put', 'post', 'delete', 'options', 'patch'] 
+var METHODS = ['get', 'put', 'post', 'delete', 'options', 'patch']
 
 describe('xmock', function() {
 
@@ -16,7 +16,7 @@ describe('xmock', function() {
       request.get('/api').end(function(err, res) {
         done(new Error('Should have thown an error'))
       })
-      
+
       xapp.use(function(req,res,next){
         try {
           res.status(201).send('')
@@ -26,7 +26,7 @@ describe('xmock', function() {
         }
 
       })
-      
+
     })
 
     it('should not have zombie middleware', function(done){
@@ -42,11 +42,11 @@ describe('xmock', function() {
         expect(res.statusCode).to.deep.equal(202)
         done()
       })
-      
+
       xapp.use(function(req,res,next){
         res.status(202).send({})
       })
-      
+
     })
 
     it('should return a response', function(done){
@@ -63,13 +63,13 @@ describe('xmock', function() {
       xapp.use(function(req,res,next){
         res.status(201).send({hello: true})
       })
-      
+
     })
 
   })
 
   describe('middleware', function(){
-    
+
     beforeEach(function(){
       xapp.reset()
     })
@@ -94,17 +94,17 @@ describe('xmock', function() {
     })
 
     it('should allow multiple middleware as arguments', function(done){
-      
+
       request.get('/some')
       .end(function(err, res){
         if(err) done(err)
       })
 
-      xapp.use('/some' 
-        , function(req,res,next){ 
+      xapp.use('/some'
+        , function(req,res,next){
 
             res.body = {yes: true}
-            next() 
+            next()
 
         }, function(req,res,next){
 
@@ -160,6 +160,20 @@ describe('xmock', function() {
 
       xapp.use('http://google.com/right', function(req,res,next){
         res.status(200).send({hello: true})
+      })
+
+    })
+
+    it('should match a regex expression', function(done){
+
+      xapp.use(/\/josh[0-9]+/, function(req,res,next) {
+        res.status(200).send({success: true})
+      })
+
+      request.get('/josh2').end(function(err,res) {
+        if(err) done(err)
+        expect(res.body).to.deep.equal({success: true})
+        done()
       })
 
     })

@@ -1,5 +1,5 @@
 var fauxJax = require('faux-jax')
-var pathToRegexP = require('path-to-regexp')
+var pathToRegexp = require('path-to-regexp')
 var urlApi = require('url')
 
 module.exports = XMock
@@ -11,6 +11,7 @@ function XMock() {
 }
 
 ['get', 'put', 'post', 'options', 'delete', 'patch' ].forEach(function(method, i){
+
   XMock.prototype[method] = function(first,second) {
     var args = [].slice.call(arguments)
     var path
@@ -23,8 +24,14 @@ function XMock() {
       args = args.slice(1)
     }
 
-    return this.use.apply(this, [path,method].concat(args))
+    return this.middleware({
+      path: path,
+      method: method,
+      middleware: args
+    })
+
   }
+
 })
 
 function setupFauxJax(cb) {
@@ -66,12 +73,11 @@ XMock.prototype.fallback = function(req,res) {
 
 XMock.prototype.use = function(first, second) {
   var path = '*'
-  var self = this
   var args = [].slice.call(arguments)
   var method
 
   // Path
-  if(typeof first === 'string') {
+  if(typeof first === 'string' || first instanceof RegExp) {
     path = first
     args = args.slice(1)
   }
@@ -82,8 +88,22 @@ XMock.prototype.use = function(first, second) {
     args = args.slice(1)
   }
 
+  return this.middleware({
+    path: path,
+    method: method,
+    middleware: args
+  })
+
+}
+
+XMock.prototype.middleware = function(opts) {
+  var self = this
+  var path = opts.path || '*'
+  var method = opts.method
+  var middleware = opts.middleware
+
   var route = new Route(path, method)
-  args.forEach(function(fn) {
+  middleware.forEach(function(fn) {
     var middle = route.middleware(fn)
     self._callbacks.push(middle)
   })
@@ -162,8 +182,7 @@ Response.prototype.send = function(body) {
 
 function Route(path, method) {
     this.path = (path === '*') ? '(.*)' : path
-    this.method = 'get'
-    this.regexp = pathToRegexP(this.path, this.keys = [])
+    this.regexp = pathToRegexp(this.path, this.keys = [])
     this.method = method
   }
 
