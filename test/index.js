@@ -2,14 +2,11 @@ var expect = require('chai').expect
 var xmock = require('../')
 var request = require('superagent')
 var fauxJax = require('faux-jax')
+var async = require('async')
 
 var xapp = xmock()
 
 describe('xmock', function() {
-
-  // beforeEach(function(){
-  //   fauxJax.removeAllListeners()
-  // })
 
   describe('basics', function(){
     it('should throw if no body', function(done){
@@ -69,7 +66,60 @@ describe('xmock', function() {
 
   })
 
+  describe('middleware', function(){
+    
+    beforeEach(function(){
+      xapp.reset()
+    })
+
+    it('should allow chaining', function(done){
+
+      request.get('/some')
+      .end(function(err, res){
+        if(err) done(err)
+      })
+
+      xapp.use(function(req,res,next){
+        res.body = {yup: true}
+        next()
+      })
+
+      xapp.use(function(req,res){
+        expect(res.body).to.deep.equal({yup: true})
+        done()
+      })
+
+    })
+
+    it('should allow multiple middleware as arguments', function(done){
+      
+      request.get('/some')
+      .end(function(err, res){
+        if(err) done(err)
+      })
+
+      xapp.use('/some' 
+        , function(req,res,next){ 
+
+            res.body = {yes: true}
+            next() 
+
+        }, function(req,res,next){
+
+          res.body.yup = true
+          next()
+
+        },function(req,res,next) {
+          expect(res.body).to.deep.equal({yes: true, yup: true})
+          done()
+        })
+
+    })
+
+  })
+
   describe('path matching', function(){
+
     beforeEach(function(){
       xapp.reset()
     })
@@ -128,6 +178,40 @@ describe('xmock', function() {
       xapp.use('/hello', 'put', function(req,res,next){
         res.status(200).send({hello: true})
       })
+
+    })
+
+    it('should have shortcut methods for get,put,post,delete,options', function(done){
+
+      var callers = []
+      var methods = ['get', 'put', 'post', 'delete', 'options', 'patch'] 
+
+      methods.forEach(function(method) {
+        xapp[method]('/api', function (req,res,next) {
+          res.status(200).send({method: method})
+        })
+
+        callers.push(
+          function(cb) {
+
+            if(method === 'delete') method = 'del'
+            if(method === 'options') return cb()
+
+            request[method]('/api').end(function(err,res){
+              if(err) done(err)
+                expect(res.body).to.deep.equal({method: method})
+              cb()
+            })
+
+          }
+        )
+      })
+
+      xapp.use('/api', function(req,res,next) {
+        res.status(200).send({method: 'missing'})
+      })
+
+      async.series(callers, done)
 
     })
 

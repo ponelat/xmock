@@ -29,6 +29,7 @@
     "path-to-regexp": "^1.2.1"
   },
   "devDependencies": {
+    "async": "^1.4.2",
     "chai": "^3.4.0",
     "mocha": "^2.3.3",
     "superagent": "^1.4.0",

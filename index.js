@@ -10,6 +10,23 @@ function XMock() {
   this.listenToFauxJax()
 }
 
+['get', 'put', 'post', 'options', 'delete', 'patch' ].forEach(function(method, i){
+  XMock.prototype[method] = function(first,second) {
+    var args = [].slice.call(arguments)
+    var path
+
+    // Extract Path
+    if(typeof first === 'function') {
+      path = '*'
+    } else {
+      var path = first
+      args = args.slice(1)
+    }
+
+    return this.use.apply(this, [path,method].concat(args))
+  }
+})
+
 function setupFauxJax(cb) {
   if(!fauxJax._installed) {
     fauxJax.install()
@@ -69,11 +86,7 @@ XMock.prototype.use = function(first, second) {
     var middle = route.middleware(fn)
     self._callbacks.push(middle)
   })
-}
-
-XMock.prototype.get = function(fn) {
-  var route = new Route('*', 'get')  
-  this._callbacks.push(route.middleware(fn))
+  return this
 }
 
 XMock.prototype.dispatch = function(req, res) {
