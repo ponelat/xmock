@@ -231,7 +231,7 @@ describe('xmock', function() {
 
   })
 
-  describe('paramters', function(){
+  describe('parameters', function(){
 
     beforeEach(function(){
       xapp.reset()
