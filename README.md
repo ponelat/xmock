@@ -14,7 +14,7 @@ $ npm install xmock
 ```
 
 
-Works with [browserify](https://github.com/substack/node-browserify) and should work with [webpack](https://github.com/visionmedia/superagent/wiki/Superagent-for-Webpack)
+Works with [webpack](https://webpack.github.io/) and should work with [browserify](https://github.com/substack/node-browserify) 
 
 ```js
 
@@ -65,9 +65,9 @@ Uses express-like paths, or regexp or full path
 
 
 ```js
-  xapp.get('/some/:thing/optional?')
-  xapp.get(/some(.*)) // regexp with groups
-  xapp.get('http://www.google.com') // full paths
+  xapp.get('/some/:thing/optional?', function(){})
+  xapp.get(/some(.*)/, function(){}) // regexp with groups
+  xapp.get('http://www.google.com', function(){}) // full paths
 ```
 
 
