@@ -79,21 +79,24 @@ describe('xmock', function() {
     it('should restore mock\'d out http internals', function(done){
 
       var self = this
+
+      // Add responder, for tryRequest
+      self.xapp.use(function(req,res,next) {
+        res.status(200).send({})
+      })
+
       this.xapp.restore()
 
-      request.get('/api').end(function(err, res) {
+      request.get('/i-should-not-exist').end(function(err, res) {
         if(err) {
           return tryRequest()
         }
         done(new Error('Expected a ECONNREFUSED'))
       })
 
+      // Called after we successfully "fail" to get a response
       function tryRequest() {
         self.xapp.install()
-
-        self.xapp.use(function(req,res,next) {
-          res.status(200).send({})
-        })
 
         request.get('/api').end(function(err, res) {
           if(err) { return done(err) }
@@ -307,8 +310,63 @@ describe('xmock', function() {
 
   })
 
+  describe('query string', function(){
+
+    beforeEach(function(){
+      this.xapp.reset()
+    })
+
+    it('should set req.query.x and have raw query in req.search', function(done){
+
+      this.xapp.use('/api', function(req,res,next) {
+        expect(req.query).to.deep.equal({one: '1', two: '2'})
+        expect(req.search).to.deep.equal('?one=1&two=2')
+        res.end()
+      })
+
+      request('/api?one=1&two=2', function(err,res) {
+        done()
+      })
+
+    })
+
+  })
+
+  describe('headers', function(){
+
+    beforeEach(function(){
+      this.xapp.reset()
+    })
+
+    it('should set headers in response', function(done){
+
+      this.xapp.use(function(req,res,next) {
+        res
+        .set('Josh', 'is cool')
+        .set({
+          Hezz: 'is also cool'
+        })
+        .status(200)
+        .send({})
+      })
+
+      request('/api', function(err,res) {
+        if(err) { return done(err) }
+        expect(res.header).to.have.property('josh')
+        expect(res.header).to.have.property('hezz')
+        expect(res.header.josh).to.equal('is cool')
+        expect(res.header.hezz).to.equal('is also cool')
+        done()
+      })
+
+    })
+
+  })
+
   describe('subsets of listeners', function(){
     it.skip('should allow a subset of the listeners to be reset/crud\'d', function(){
+    })
+    it.skip('should implement express 4.x .all', function(){
     })
   })
 

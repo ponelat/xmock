@@ -1,6 +1,7 @@
 var fauxJax = require('faux-jax')
 var pathToRegexp = require('path-to-regexp')
 var urlApi = require('url')
+var qs = require('qs')
 
 module.exports = xmock
 
@@ -28,6 +29,15 @@ function setupFauxJax(cb) {
   return listener
 }
 
+function merge(dest, src) {
+  for(var i in src) {
+    if(src.hasOwnProperty(i)) {
+      if(typeof dest[i] == 'undefined') {
+        dest[i] = src[i]
+      }
+    }
+  }
+}
 
 // ========= Classes
 
@@ -146,38 +156,21 @@ XMock.prototype.dispatch = function(req, res) {
 function mutateRequest(req) {
   req.url = req.requestURL
   req.method = req.requestMethod.toLowerCase()
-  req.headers = req.requestHeaders
+  req.header = req.requestHeaders
   req.body = req.requestBody
   var urlParsed = urlApi.parse(req.url)
   merge(req, urlParsed)
+  req.query = qs.parse(req.query)
   return req
-}
-
-function merge(dest, src) {
-  for(var i in src) {
-    if(src.hasOwnProperty(i)) {
-      if(dest[i]) {
-        console.log('warning, overwriting ' + i)
-      }
-      dest[i] = src[i]
-    }
-  }
 }
 
 function Response(respond) {
   this.body = {}
-  this.headers = {
+  this.header = {
     'Content-type': 'application/json'
   }
   this.code = 400
   this._respond = respond
-
-  // req.respond(
-  //   200, { // status
-  //     'Content-Type': 'application/json' // headers
-  //   },
-  //   '{"zup": "bro?"}' //body
-  // );
 }
 
 Response.prototype.end = function() {
@@ -186,7 +179,7 @@ Response.prototype.end = function() {
     throw new Error('No body provided in response')
   }
 
-  this._respond(this.code, this.headers, bodyStr)
+  this._respond(this.code, this.header, bodyStr)
 }
 
 Response.prototype.status = function(code) {
@@ -197,6 +190,15 @@ Response.prototype.status = function(code) {
 Response.prototype.send = function(body) {
   this.body = body
   this.end()
+}
+
+Response.prototype.set = function(header, value) {
+  if(header && typeof header === 'object') {
+    merge(this.header, header)
+  } else {
+    this.header[header] = value
+  }
+  return this
 }
 
 function Route(path, method) {
