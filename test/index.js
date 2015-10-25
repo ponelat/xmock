@@ -251,6 +251,20 @@ describe('xmock', function() {
 
     })
 
+    it('should handle regexp params too', function(done){
+
+      xapp.use(/\/one(two)(three)/, function(req,res,next) {
+        res.status(200).send(req.params)
+      })
+
+      request.get('/onetwothree', function(err,res) {
+        if(err) done(err)
+        expect(res.body).to.deep.equal({0: 'two', 1: 'three'})
+        done()
+      })
+
+    })
+
   })
 
 })
