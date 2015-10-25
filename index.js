@@ -175,9 +175,6 @@ function Response(respond) {
 
 Response.prototype.end = function() {
   var bodyStr = (typeof this.body === 'object') ? JSON.stringify(this.body) : this.body
-  if(!bodyStr || bodyStr === '') {
-    throw new Error('No body provided in response')
-  }
 
   this._respond(this.code, this.header, bodyStr)
 }

@@ -21,7 +21,9 @@ describe('xmock', function() {
   })
 
   describe('basics', function(){
-    it('should throw if no body', function(done){
+
+    // Deprecating
+    it.skip('should throw if no body', function(done){
 
       request.get('/api').end(function(err, res) {
         done(new Error('Should have thown an error'))
