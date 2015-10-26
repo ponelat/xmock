@@ -27,8 +27,7 @@
   "homepage": "https://github.com/ponelat/xmock#readme",
   "dependencies": {
     "faux-jax": "ponelat/faux-jax",
-    "path-to-regexp": "^1.2.1",
-    "qs": "^5.2.0"
+    "path-to-regexp": "^1.2.1"
   },
   "devDependencies": {
     "async": "^1.4.2",
