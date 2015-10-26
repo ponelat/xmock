@@ -1,5 +1,5 @@
 var fs = require('fs');
-var conf = require('./karma.conf.js').conf
+var baseConf = require('./karma.conf-base')
 var _ = require('lodash')
 
 module.exports = function(config) {
@@ -34,20 +34,26 @@ module.exports = function(config) {
 
   config.set(_.merge({
 
-    reporters: ['mocha', 'saucelabs'],
+    reporters: ['saucelabs'],
 
     port: 9876,
     colors: true,
-    plugins:  [ require('karma-sauce-launcher') ].concat(conf.plugins),
+    plugins:  [ require('karma-sauce-launcher') ],
 
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
     logLevel: config.LOG_INFO,
     sauceLabs: {
-      testName: 'mocking away!'
+      testName: 'xmock',
+      recordScreenshots: false,
+      connectOptions: {
+        port: 5757,
+        logfile: 'sauce_connect.log'
+      },
+      public: 'public'
     },
     captureTimeout: 120000,
     customLaunchers: customLaunchers,
     browsers: Object.keys(customLaunchers),
 
-  }, conf));
+  }, baseConf));
 };

@@ -1,37 +1,12 @@
-var path = require('path')
-var webpack = require('./webpack.config.js')
+var baseConf = require('./karma.conf-base')
+var _ = require('lodash')
 
-module.exports = conf
-
-function conf(config) {
-  config.set(conf.conf)
+module.exports = function (config) {
+  config.set(_.merge({
+    browsers: [ 'Firefox' ], //run in Chrome
+    plugins: [
+      require('karma-firefox-launcher'),
+    ]
+  }, baseConf))
 }
 
-conf.conf = {
-  browsers: [ 'Firefox' ], //run in Chrome
-  singleRun: true, //just run once by default
-  frameworks: [ 'mocha' ], //use the mocha test framework
-  plugins: [
-    require('karma-webpack'),
-    require('karma-mocha'),
-    require('karma-firefox-launcher'),
-    // require('karma-phantomjs-launcher'), // One can install this locally, if one so desires to speed things up
-    require('karma-sourcemap-loader'),
-    require('karma-mocha-reporter')
-  ],
-  files: [
-    'tests.webpack.js'
-  ],
-  preprocessors: {
-    'tests.webpack.js': [ 'webpack', 'sourcemap' ], //preprocess with webpack and our sourcemap loader
-  },
-  reporters: [ 'mocha' ],
-  webpack: { //kind of a copy of your webpack config
-    devtool: 'inline-source-map', //just do inline source maps instead of the default
-    module: webpack.module,
-    resolve: webpack.resolve
-  },
-  webpackServer: {
-    noInfo: true //please don't spam the console when running in karma!
-  }
-}
