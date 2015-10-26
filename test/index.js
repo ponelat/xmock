@@ -396,6 +396,44 @@ describe('xmock', function() {
 
   })
 
+  describe('body parsing', function(){
+
+    beforeEach(function(){
+      this.xapp.reset()
+    })
+
+    it('should parse the body, if content-type == json', function(done){
+
+      var self = this
+
+      self.xapp.post('/json', function(req,res,next) {
+        expect(req.body).to.deep.equal({json: true})
+        res.status(200).end()
+      })
+
+      self.xapp.post('/str', function(req,res,next) {
+        expect(req.body).to.deep.equal("{str: true}")
+        res.status(200).end()
+      })
+
+      async.series([
+        function (cb) {
+          request.post('/json')
+          .type('json')
+          .send('{"json": true}')
+          .end(cb)
+        },
+        function (cb) {
+          request.post('/str')
+          .send('{str: true}')
+          .end(cb)
+        }
+      ],done)
+
+    })
+
+  })
+
   describe('subsets of listeners', function(){
     it.skip('should allow a subset of the listeners to be reset/crud\'d', function(){
     })

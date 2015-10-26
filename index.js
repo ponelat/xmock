@@ -191,11 +191,30 @@ XMock.prototype.dispatch = function(req, res) {
 function mutateRequest(req) {
   req.url = req.requestURL
   req.method = req.requestMethod.toLowerCase()
+
   req.header = req.requestHeaders
+  lowerCaseKeys(req.header)
+
   req.body = req.requestBody
+  if(/json$/.test(req.header['content-type'])) {
+    req.body = JSON.parse(req.body, null, 2)
+  }
+
   var urlParsed = urlApi.parse(req.url, true)
   merge(req, urlParsed)
+
   return req
+}
+
+function lowerCaseKeys(obj) {
+  for(var key in  obj) {
+    if(hasOwnProperty.call(obj, key)) {
+      var val = obj[key]
+      delete obj[key]
+      obj[key.toLowerCase()] = val
+    }
+  }
+  return obj
 }
 
 function Response(respond) {
