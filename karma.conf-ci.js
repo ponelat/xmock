@@ -10,8 +10,8 @@ module.exports = function(config) {
       console.log('Create a sauce.json with your credentials based on the sauce-sample.json file.');
       process.exit(1);
     } else {
-      process.env.SAUCE_USERNAME = require('./sauce').username;
-      process.env.SAUCE_ACCESS_KEY = require('./sauce').accessKey;
+      process.env.SAUCE_USERNAME = require('./sauce.json').SAUCE_USERNAME;
+      process.env.SAUCE_ACCESS_KEY = require('./sauce.json').SAUCE_ACCESS_KEY;
     }
   }
 
@@ -38,6 +38,7 @@ module.exports = function(config) {
 
     port: 9876,
     colors: true,
+    plugins:  [ require('karma-sauce-launcher') ].concat(conf.plugins),
 
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
     logLevel: config.LOG_INFO,
