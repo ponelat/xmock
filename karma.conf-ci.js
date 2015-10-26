@@ -58,7 +58,6 @@ module.exports = function(config) {
       version: "8.1"
     }
   }
-};
 
   config.set(_.merge({
 
@@ -86,4 +85,4 @@ module.exports = function(config) {
     browsers: Object.keys(customLaunchers),
 
   }, baseConf));
-};
+}
