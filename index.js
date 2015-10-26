@@ -4,10 +4,17 @@ var urlApi = require('url')
 
 module.exports = xmock
 
+// Used to generate docs too
+var METHODS = ['get', 'put', 'post', 'options', 'delete' ]
+var META = {
+  methods: METHODS
+}
+
 var singleton
 function xmock() {
   if(!singleton) {
     singleton = new XMock()
+    singleton._meta = META
   }
   return singleton
 }
@@ -81,8 +88,9 @@ function XMock() {
   this.install()
 }
 
+
 // 'patch' doesn't work in firefox (at least)
-['get', 'put', 'post', 'options', 'delete' ].forEach(function(method, i){
+METHODS.forEach(function(method, i){
 
   XMock.prototype[method] = function(first,second) {
     var args = [].slice.call(arguments)

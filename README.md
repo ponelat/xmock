@@ -50,12 +50,9 @@ Works with [webpack](https://webpack.github.io/) and should work with [browserif
 
 ## Supports the usual http methods ...
 
-- .get
-- .post
-- .put
-- .delete
-- .patch
-
+{{ #each methods}}
+- {{ . }}
+{{ /each}}
 
 ## Restoring normal http requests
 
