@@ -1,5 +1,6 @@
 var fs = require('fs');
 var conf = require('./karma.conf.js').conf
+var _ = require('lodash')
 
 module.exports = function(config) {
 
