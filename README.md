@@ -42,6 +42,10 @@ Works with [webpack](https://webpack.github.io/) and should work with [browserif
     req.send({some: 'json'})
   })
 
+  // And when you want to remove all your middleware
+
+  xapp.reset() // still listenening, but without any middleware
+
 ```
 
 ## Supports the usual http methods ...
@@ -55,8 +59,14 @@ Works with [webpack](https://webpack.github.io/) and should work with [browserif
 
 ## Restoring normal http requests
 
-`.restore() -> ` will allow normal requests to go through, but will leave your middleware intact
-`.install() -> ` same as xmock(), it'll capture the http requests
+- `.restore() -> ` 
+    will allow normal requests to go through, but will leave your middleware intact
+
+- `.install() -> ` 
+    same as xmock(), it'll capture the http requests
+
+- `.reset() ->`
+    removes the middleware (under the hood it just resets the callback array)
 
 
 ## Path matching
