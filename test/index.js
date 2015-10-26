@@ -4,7 +4,7 @@ var request = require('superagent')
 var fauxJax = require('faux-jax')
 var async = require('async')
 
-var METHODS = ['get', 'put', 'post', 'delete', 'options', 'patch']
+var METHODS = ['get', 'put', 'post', 'delete']
 
 describe('xmock', function() {
 
@@ -198,7 +198,7 @@ describe('xmock', function() {
         done()
       })
 
-      this.xapp.use('/right', function(req,res,next){
+      this.xapp.use('/wrong', function(req,res,next){
         res.status(300).send({hello: false})
       })
 
@@ -318,6 +318,36 @@ describe('xmock', function() {
       this.xapp.reset()
     })
 
+    it('should ignore query string in match, if not explicitly specified', function(done){
+
+      this.xapp.use('/api', function(req,res,next) {
+        expect(req.search).to.deep.equal('?one=1&two=2')
+        res.end()
+      })
+
+      request('/api/one?one=1&two=2', function(err,res) {
+        done()
+      })
+
+    })
+
+    it('should match the query string as well, if explicitly set', function(done){
+
+      this.xapp.use('/api?one=1', function(req,res,next) {
+        return done(new Error('Should not match partial query strings'))
+      })
+
+      this.xapp.use('/api?one=1&two=2', function(req,res,next) {
+        expect(req.search).to.deep.equal('?one=1&two=2')
+        res.end()
+      })
+
+      request('/api?one=1&two=2', function(err,res) {
+        done()
+      })
+
+    })
+
     it('should set req.query.x and have raw query in req.search', function(done){
 
       this.xapp.use('/api', function(req,res,next) {
@@ -331,6 +361,7 @@ describe('xmock', function() {
       })
 
     })
+
 
   })
 

@@ -1,7 +1,6 @@
 var fauxJax = require('faux-jax')
 var pathToRegexp = require('path-to-regexp')
 var urlApi = require('url')
-var qs = require('qs')
 
 module.exports = xmock
 
@@ -39,6 +38,41 @@ function merge(dest, src) {
   }
 }
 
+function isFullUrl(expressLike) {
+
+  // Can't determine from regex, so assume full url
+  if(expressLike instanceof RegExp) {
+    return true
+  }
+
+  if(typeof expressLike !== 'string') {
+    return false
+  }
+
+  if(/^https?:\/\/.*/i.test(expressLike)) {
+    return true
+  }
+
+  if(/^[\w-]+\..*/.test(expressLike)) {
+    return true
+  }
+}
+
+function hasQueryString(expressLike) {
+  if(expressLike instanceof RegExp) {
+    return true
+  }
+
+  if(typeof expressLike !== 'string') {
+    return false
+  }
+
+  if( /\?[^\/]+/.test(expressLike)) {
+    return true
+  }
+
+}
+
 // ========= Classes
 
 function XMock() {
@@ -47,7 +81,8 @@ function XMock() {
   this.install()
 }
 
-['get', 'put', 'post', 'options', 'delete', 'patch' ].forEach(function(method, i){
+// 'patch' doesn't work in firefox (at least)
+['get', 'put', 'post', 'options', 'delete' ].forEach(function(method, i){
 
   XMock.prototype[method] = function(first,second) {
     var args = [].slice.call(arguments)
@@ -158,9 +193,8 @@ function mutateRequest(req) {
   req.method = req.requestMethod.toLowerCase()
   req.header = req.requestHeaders
   req.body = req.requestBody
-  var urlParsed = urlApi.parse(req.url)
+  var urlParsed = urlApi.parse(req.url, true)
   merge(req, urlParsed)
-  req.query = qs.parse(req.query)
   return req
 }
 
@@ -200,8 +234,10 @@ Response.prototype.set = function(header, value) {
 
 function Route(path, method) {
     this.path = (path === '*') ? '(.*)' : path
-    this.regexp = pathToRegexp(this.path, this.keys = [])
+    this.regexp = pathToRegexp(this.path, this.keys = [], {end: false})
     this.method = method
+    this.matchQueryString = hasQueryString(path)
+    this.fullUrl = isFullUrl(path)
   }
 
   /**
@@ -217,11 +253,18 @@ function Route(path, method) {
     var self = this;
     return function(req,res,next) {
       var url
-      if(req.host === 'localhost') {
+      if(!self.fullUrl) {
+
         url = req.pathname
+
+        if(self.matchQueryString) {
+          url = req.path
+        }
+
       } else {
         url = req.url
       }
+
 
       // Match method... /if/ its there
       if(self.method && self.method !== req.method) {
