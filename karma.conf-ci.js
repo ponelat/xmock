@@ -45,6 +45,9 @@ module.exports = function(config) {
     sauceLabs: {
       testName: 'xmock',
       recordScreenshots: false,
+      build: process.env.TRAVIS_BUILD_NUMBER,
+      tags: ['mock', 'xhr', 'http'],
+      version: require('./package.json').version,
       connectOptions: {
         port: 5757,
         logfile: 'sauce_connect.log'
