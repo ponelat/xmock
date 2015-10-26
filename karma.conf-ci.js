@@ -19,18 +19,46 @@ module.exports = function(config) {
   var customLaunchers = {
     'SL_Chrome': {
       base: 'SauceLabs',
-      browserName: 'chrome'
+      browserName: 'chrome',
+      version: '45'
     },
-    'SL_InternetExplorer': {
-      base: 'SauceLabs',
-      browserName: 'internet explorer',
-      version: '10'
-    },
-    'SL_FireFox': {
+    'SL_Firefox': {
       base: 'SauceLabs',
       browserName: 'firefox',
+      version: '39'
+    },
+    'SL_Safari': {
+      base: 'SauceLabs',
+      browserName: 'safari',
+      platform: 'OS X 10.10',
+      version: '8'
+    },
+    'SL_IE_9': {
+      base: 'SauceLabs',
+      browserName: 'internet explorer',
+      platform: 'Windows 2008',
+      version: '9'
+    },
+    'SL_IE_10': {
+      base: 'SauceLabs',
+      browserName: 'internet explorer',
+      platform: 'Windows 2012',
+      version: '10'
+    },
+    'SL_IE_11': {
+      base: 'SauceLabs',
+      browserName: 'internet explorer',
+      platform: 'Windows 8.1',
+      version: '11'
+    },
+    'SL_iOS': {
+      base: "SauceLabs",
+      browserName: "iphone",
+      platform: "OS X 10.10",
+      version: "8.1"
     }
-  };
+  }
+};
 
   config.set(_.merge({
 
@@ -45,9 +73,8 @@ module.exports = function(config) {
     sauceLabs: {
       testName: 'xmock',
       recordScreenshots: false,
-      build: process.env.TRAVIS_BUILD_NUMBER,
+      build: require('./package.json').version + ' - ' + process.env.TRAVIS_BUILD_NUMBER,
       tags: ['mock', 'xhr', 'http'],
-      version: require('./package.json').version,
       connectOptions: {
         port: 5757,
         logfile: 'sauce_connect.log'
