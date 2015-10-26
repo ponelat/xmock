@@ -4,6 +4,7 @@ Just a simple way to mock out your API calls, without running a server.
 Its express-like, fast and hopefully simple to use.
 I aim to make to 1-to-1 compatible with express 4.x, so that I can play with middleware :smile:
 
+[![Sauce Test Status](https://saucelabs.com/browser-matrix/ponelat-xmock.svg)](https://saucelabs.com/u/ponelat-xmock)
 
 ## Installation
 
@@ -100,6 +101,6 @@ Such an awesome concept, is middleware!
 
 ```
 
-## Browser
+## Credit
 
-I'm waiting on implementing browser tests, to put this into 5th gear
+All of this is definitely not possible, without the great work done on these projects... [faux-jax](https://github.com/algolia/faux-jax) and [path-to-regexp](https://github.com/pillarjs/path-to-regexp)
