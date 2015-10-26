@@ -39,7 +39,7 @@ Works with [webpack](https://webpack.github.io/) and should work with [browserif
   // Keep the middleware going!
   xapp.use(function(req,res,next) {
     // Same request above
-    req.send({some: 'json'})
+    res.send({some: 'json'})
   })
 
   // And when you want to remove all your middleware
