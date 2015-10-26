@@ -4,9 +4,12 @@
   "description": "express-like, http/xhr mocking, without a server",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -c test/**/*.js",
+    "test": "npm run mocha && npm run karma-ci",
+    "mocha": "mocha -c test/**/*.js",
     "watch": "watch-run -ip '{test,.}/*.js' npm run test",
-    "karma-w": "karma start --auto-watch --no-single-run"
+    "karma": "karma start",
+    "karma-w": "karma start --auto-watch --no-single-run",
+    "karma-ci": "karma start karma.conf-ci.js"
   },
   "repository": {
     "type": "git",
@@ -38,6 +41,7 @@
     "karma-mocha-reporter": "^1.1.1",
     "karma-sourcemap-loader": "^0.3.6",
     "karma-webpack": "^1.7.0",
+    "lodash": "^3.10.1",
     "mocha": "^2.3.3",
     "superagent": "^1.4.0",
     "watch-run": "^1.2.2",
