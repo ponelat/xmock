@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npm run mocha && npm run karma-ci",
     "mocha": "mocha -c test/**/*.js",
-    "watch": "watch-run -ip '{test,.}/*.js' npm run test",
+    "watch": "watch-run -ip \"{test,.}/*.js\" npm run mocha",
     "karma": "karma start",
     "karma-w": "karma start --auto-watch --no-single-run",
     "karma-ci": "karma start karma.conf-ci.js"
