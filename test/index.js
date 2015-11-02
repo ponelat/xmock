@@ -63,8 +63,6 @@ describe('xmock', function() {
 
     it('should return a response', function(done){
 
-      this.xapp.reset()
-
       request.get('/api').end(function(err, res) {
         if(err) {done(err)}
         expect(res.statusCode).to.deep.equal(201)
@@ -112,11 +110,77 @@ describe('xmock', function() {
 
   })
 
-  describe('middleware', function(){
+  describe('responses', function(){
 
-    beforeEach(function(){
-      this.xapp.reset()
+    it('should return a response with express-like, res.status().end()', function(done){
+
+      this.xapp.get('/api', function(req,res,next) {
+        res.status(201).end()
+      })
+
+      request.get('/api').end(function(err,res) {
+        expect(res.statusCode).to.eql(201)
+        done()
+      })
+
     })
+
+    it('should allow a simple end of response with res.end()', function(done){
+
+      this.xapp.get('/api', function(req,res) {
+        res.end()
+      })
+
+      request.get('/api').end(function(err,res) {
+        expect(res.statusCode).to.eql(200)
+        done()
+      })
+
+    })
+
+    it('can return an object instead of res.send()', function(done){
+
+      this.xapp.get('/', function(req,res) {
+        return {
+          just: 'the body'
+        }
+      })
+
+      request.get('/api').end(function(err,res) {
+        expect(res.statusCode).to.eql(200)
+        expect(res.body).to.deep.equal({
+          just: 'the body'
+        })
+        done()
+      })
+
+    })
+
+    it('can return an array of [code: number, body: object, headers: object]', function(done){
+
+      this.xapp.get('/', function(req,res) {
+        return [
+          201,
+          { just: 'the body' },
+          { 'x-cool': 'yeah' }
+        ]
+      })
+
+      request.get('/api').end(function(err,res) {
+        expect(res.statusCode).to.eql(201)
+        expect(res.header['x-cool']).to.eql('yeah')
+        expect(res.body).to.deep.equal({
+          just: 'the body'
+        })
+        done()
+      })
+
+    })
+
+
+  })
+
+  describe('middleware', function(){
 
     it('should allow chaining', function(done){
 
@@ -162,13 +226,21 @@ describe('xmock', function() {
 
     })
 
+    it.skip('can create a shortcut middleware by returning object for body', function(done){
+
+      request.get('/').end(function(err, res){
+        if (err) done(err)
+        expect(res.body).to.deep.equal({hello: true})
+        done()
+      })
+
+      this.xapp.get('/', {hello: true})
+
+    })
+
   })
 
   describe('path matching', function(){
-
-    beforeEach(function(){
-      this.xapp.reset()
-    })
 
     it('should match a path', function(done){
 
@@ -278,10 +350,6 @@ describe('xmock', function() {
 
   describe('parameters', function(){
 
-    beforeEach(function(){
-      this.xapp.reset()
-    })
-
     it('should set parameters from express-like path', function(done){
 
       this.xapp.use('/some/:one/:two', function(req,res,next) {
@@ -313,10 +381,6 @@ describe('xmock', function() {
   })
 
   describe('query string', function(){
-
-    beforeEach(function(){
-      this.xapp.reset()
-    })
 
     it('should ignore query string in match, if not explicitly specified', function(done){
 
@@ -367,10 +431,6 @@ describe('xmock', function() {
 
   describe('headers', function(){
 
-    beforeEach(function(){
-      this.xapp.reset()
-    })
-
     it('should set headers in response', function(done){
 
       this.xapp.use(function(req,res,next) {
@@ -397,10 +457,6 @@ describe('xmock', function() {
   })
 
   describe('body parsing', function(){
-
-    beforeEach(function(){
-      this.xapp.reset()
-    })
 
     it('should parse the body, if content-type == json', function(done){
 

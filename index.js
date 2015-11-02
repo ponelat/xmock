@@ -135,14 +135,40 @@ XMock.prototype.dispatch = function(req, res) {
   var self = this
   req = mutateRequest(req)
 
-    function nextEnter() {
-      var fn = self._callbacks[i++];
-      if(!fn) return self.fallback(req,res) // unhandled
-      fn(req, res, nextEnter);
+  function nextEnter() {
+
+    var fn = self._callbacks[i++];
+
+    if(!fn) {
+      return self.fallback(req,res) // unhandled
     }
 
-    nextEnter();
-  };
+    var returned = fn(req, res, nextEnter)
+
+    // Handle shortcut method of return an object-or-array instead of using res.send
+    if(isArray(returned)) {
+
+      res.status(returned[0])
+      res.set(returned[2])
+      res.send(returned[1])
+
+      return
+    } else if(isObject(returned)) {
+      return res.send(returned)
+    }
+
+  }
+
+  nextEnter();
+}
+
+function isObject(test) {
+  return test && typeof test === 'object'
+}
+
+function isArray(test) {
+  return Array.isArray(test)
+}
 
 function mutateRequest(req) {
   req.url = req.requestURL
@@ -178,7 +204,7 @@ function Response(respond) {
   this.header = {
     'Content-type': 'application/json'
   }
-  this.code = 400
+  this.code = 200
   this._respond = respond
 }
 
