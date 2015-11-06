@@ -10,6 +10,7 @@ function xmock() {
   if(!singleton) {
     singleton = new XMock()
   }
+  singleton.install()
   return singleton
 }
 
@@ -67,11 +68,15 @@ XMock.prototype.reset = function(fn) {
 }
 
 XMock.prototype.restore = function() {
-  fauxJax.restore()
+  if(fauxJax._installed) {
+    fauxJax.restore()
+  }
+  return this
 }
 
 XMock.prototype.install = function() {
   this.listenToFauxJax()
+  return this
 }
 
 XMock.prototype.listenToFauxJax = function() {

@@ -17,7 +17,7 @@ describe('xmock - bugs', function() {
   })
 
   after(function(){
-    this.xapp.reset()
+    this.xapp.restore()
   })
 
   beforeEach(function(){
@@ -55,6 +55,18 @@ describe('xmock - bugs', function() {
     }
 
     async.series(requests.concat([listenerCheck]), done)
+
+  })
+
+  it('.restore() should be idempotent', function(done){
+    this.xapp.restore()
+    this.xapp.restore()
+    this.xapp.restore()
+
+    request.get('/').end(function(err,res) {
+      expect(err.code).to.eql('ECONNREFUSED')
+      done()
+    })
 
   })
 

@@ -6,6 +6,51 @@ var async = require('async')
 
 var METHODS = ['get', 'put', 'post', 'delete']
 
+function aRequestShouldFail(done) {
+  request.get('/something-random', function(err,res) {
+    expect(err.code).to.eql('ECONNREFUSED')
+    if(done) done()
+  })
+}
+
+describe('xmock - init', function(){
+  it('should call .install() on each xmock() call', function(done){
+    var xapp
+    async.series([
+      aRequestShouldFail,
+      function (cb) {
+        xapp = xmock()
+        xapp.get('/', function(req,res,next) {
+          return {}
+        })
+
+        request.get('/test', function(err,res) {
+          if(err) done(err)
+          cb()
+        })
+      },
+      function (cb) {
+        xmock().restore()
+        cb()
+      },
+      aRequestShouldFail,
+      function (cb) {
+        var xapp = xmock()
+        xapp.get('/', function(req,res,next) {
+          return {}
+        })
+
+        request.get('/test', function(err,res) {
+          if(err) done(err)
+          cb()
+        })
+      },
+
+    ],done)
+
+  })
+})
+
 describe('xmock', function() {
 
   before(function(){
@@ -13,7 +58,7 @@ describe('xmock', function() {
   })
 
   after(function(){
-    this.xapp.reset()
+    this.xapp.restore()
   })
 
   beforeEach(function(){
@@ -49,14 +94,14 @@ describe('xmock', function() {
 
       this.xapp.reset()
 
+      this.xapp.use(function(req,res,next){
+        res.status(202).send({})
+      })
+
       request.get('/api').end(function(err, res) {
         if(err) {done(err)}
         expect(res.statusCode).to.deep.equal(202)
         done()
-      })
-
-      this.xapp.use(function(req,res,next){
-        res.status(202).send({})
       })
 
     })
