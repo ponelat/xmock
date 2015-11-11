@@ -8,68 +8,70 @@ var tooManyListeners = 4
 
 describe('xmock - bugs', function() {
 
-  before(function(){
-    var self = this
-    this.events = {}
-    fauxJax.setMaxListeners(tooManyListeners-1)
-    fauxJax.on('newListener', function(ev) { self.events[ev] = true })
-    this.xapp = xmock()
-  })
+  describe('listeners', function() {
 
-  after(function(){
-    this.xapp.restore()
-  })
+    before(function(){
+      var self = this
+      this.events = {}
+      fauxJax.setMaxListeners(tooManyListeners-1)
+      fauxJax.on('newListener', function(ev) { self.events[ev] = true })
+      this.xapp = xmock()
+    })
 
-  beforeEach(function(){
-    this.xapp.reset()
-  })
+    after(function(){
+      this.xapp.restore()
+    })
 
-  it('should not leak listeners', function(done){
+    beforeEach(function(){
+      this.xapp.reset()
+    })
 
-    var events = this.events
-    var requests = []
-    for (var i = 0; i < tooManyListeners; i++) {
+    it('should not leak listeners', function(done){
 
-      this.xapp.use(function(req,res,next){
-        res.status(200).send({})
+      var events = this.events
+      var requests = []
+      for (var i = 0; i < tooManyListeners; i++) {
+
+        this.xapp.use(function(req,res,next){
+          res.status(200).send({})
+        })
+
+        requests.push(
+          function (cb) {
+            request.get('/something', function(err,res) {
+              if(err) done(err)
+                expect(res.ok).to.equal(true)
+              cb()
+            })
+          }
+        )
+
+      }
+
+      function listenerCheck(cb) {
+        for(var ev in events) {
+          var len = fauxJax.listeners(ev).length
+          expect(len).to.be.below(tooManyListeners, 'too many "'+ev+'" listeners')
+        }
+        cb()
+      }
+
+      async.series(requests.concat([listenerCheck]), done)
+
+    })
+
+    it('.restore() should be idempotent', function(done){
+      this.xapp.restore()
+      this.xapp.restore()
+      this.xapp.restore()
+
+      request.get('/').end(function(err,res) {
+        expect(err.code).to.eql('ECONNREFUSED')
+        done()
       })
 
-      requests.push(
-        function (cb) {
-          request.get('/something', function(err,res) {
-            if(err) done(err)
-              expect(res.ok).to.equal(true)
-            cb()
-          })
-        }
-      )
-
-    }
-
-    function listenerCheck(cb) {
-      for(var ev in events) {
-        var len = fauxJax.listeners(ev).length
-        expect(len).to.be.below(tooManyListeners, 'too many "'+ev+'" listeners')
-      }
-      cb()
-    }
-
-    async.series(requests.concat([listenerCheck]), done)
-
-  })
-
-  it('.restore() should be idempotent', function(done){
-    this.xapp.restore()
-    this.xapp.restore()
-    this.xapp.restore()
-
-    request.get('/').end(function(err,res) {
-      expect(err.code).to.eql('ECONNREFUSED')
-      done()
     })
 
   })
 
 })
-
-
