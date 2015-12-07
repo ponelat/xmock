@@ -49,6 +49,28 @@ describe('xmock - init', function(){
     ],done)
 
   })
+
+  it('should call reset on each xmock() call', function(){
+    var xapp = xmock()
+    xapp.use(function(){})
+    expect(xapp._callbacks).to.have.length(1)
+    xmock()
+    expect(xapp._callbacks).to.have.length(0)
+  })
+
+  it('should call .unhandled for unhandled requests', function(done){
+
+    xmock({unhandled: function (req,res) {
+      expect(req.path).to.eql('/unhandled')
+      done()
+    }})
+
+    request.get('/unhandled').end(function(err, res) {
+      // done(err)
+      done(new Error('Should not have resolved request'))
+    })
+
+  })
 })
 
 describe('xmock', function() {
@@ -67,24 +89,6 @@ describe('xmock', function() {
 
   describe('basics', function(){
 
-    // Deprecating
-    it.skip('should throw if no body', function(done){
-
-      request.get('/api').end(function(err, res) {
-        done(new Error('Should have thown an error'))
-      })
-
-      this.xapp.use(function(req,res,next){
-        try {
-          res.status(201).send('')
-        } catch(e) {
-          expect(e+'').to.equal('Error: No body provided in response')
-          done()
-        }
-
-      })
-
-    })
 
     it('should not have zombie middleware', function(done){
 

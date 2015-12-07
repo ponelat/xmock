@@ -6,11 +6,12 @@ var helpers = require('./helpers.js')
 module.exports = xmock
 
 var singleton
-function xmock() {
+function xmock(opts) {
   if(!singleton) {
     singleton = new XMock()
   }
-  singleton.install()
+  singleton.install(opts)
+  singleton.reset()
   return singleton
 }
 
@@ -35,7 +36,6 @@ function setupFauxJax(cb) {
 function XMock() {
   this._callbacks = []
   this._requestListener = null
-  this.install()
 }
 
 // 'patch' doesn't work in firefox (at least)
@@ -74,7 +74,8 @@ XMock.prototype.restore = function() {
   return this
 }
 
-XMock.prototype.install = function() {
+XMock.prototype.install = function(opts) {
+  this.opts = opts || {}
   this.listenToFauxJax()
   return this
 }
@@ -90,8 +91,8 @@ XMock.prototype.listenToFauxJax = function() {
 }
 
 XMock.prototype.fallback = function(req,res) {
-  if(this._unhandled) {
-    return this._unhandled(req,res)
+  if(this.opts.unhandled) {
+    return this.opts.unhandled(req,res)
   }
   throw new Error('Unhandled request in xmock: ' + req.method.toUpperCase() + ' ' +req.url)
 }
