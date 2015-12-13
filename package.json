@@ -1,6 +1,6 @@
 {
   "name": "xmock",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "express-like, http/xhr mocking, without a server",
   "main": "index.js",
   "scripts": {
