@@ -1,7 +1,6 @@
 var expect = require('chai').expect
 var xmock = require('../')
 var request = require('superagent')
-var fauxJax = require('faux-jax')
 var async = require('async')
 
 var METHODS = ['get', 'put', 'post', 'delete']

@@ -1,34 +1,20 @@
-var fauxJax = require('faux-jax')
-var pathToRegexp = require('path-to-regexp')
+var Mocker = require('./mocker')
 var urlApi = require('url')
-var helpers = require('./helpers.js')
+var Helpers = require('./helpers.js')
+var Route = require('./route.js')
+var Response = require('./response.js')
 
 module.exports = xmock
 
-var singleton
+var METHODS = Object.freeze(['get', 'put', 'post', 'options', 'delete' ])
+
 function xmock(opts) {
-  if(!singleton) {
-    singleton = new XMock()
+  if(!XMock.singleton) {
+    XMock.singleton = new XMock()
   }
-  singleton.install(opts)
-  singleton.reset()
-  return singleton
-}
-
-// ===== functions
-
-function setupFauxJax(cb) {
-  if(!fauxJax._installed) {
-    fauxJax.install()
-  }
-
-  var listener = function(req) {
-    var end = function() { req.respond.apply(req, arguments) }
-    cb(req, new Response(end))
-  }
-
-  fauxJax.on('request', listener)
-  return listener
+  XMock.singleton.install(opts)
+  XMock.singleton.reset()
+  return XMock.singleton
 }
 
 // ========= Classes
@@ -36,10 +22,38 @@ function setupFauxJax(cb) {
 function XMock() {
   this._callbacks = []
   this._requestListener = null
+  this._class = XMock
+}
+
+XMock.prototype.reset = function(fn) {
+  this._callbacks = []
+}
+
+XMock.prototype.restore = function() {
+  if(Mocker._installed) {
+    Mocker.restore()
+  }
+  return this
+}
+
+XMock.prototype.install = function(opts) {
+  this.opts = opts || {}
+  this.listenToFauxJax()
+  return this
+}
+
+XMock.prototype.listenToFauxJax = function() {
+  var self = this
+  if(this._requestListener) {
+    Mocker.removeListener('request', this._requestListener)
+  }
+  this._requestListener = setupFauxJax(function(req,res) {
+    self.dispatch(req,res)
+  })
 }
 
 // 'patch' doesn't work in firefox (at least)
-['get', 'put', 'post', 'options', 'delete' ].forEach(function(method, i){
+METHODS.forEach(function(method, i){
 
   XMock.prototype[method] = function(first,second) {
     var args = [].slice.call(arguments)
@@ -62,40 +76,6 @@ function XMock() {
   }
 
 })
-
-XMock.prototype.reset = function(fn) {
-  this._callbacks = []
-}
-
-XMock.prototype.restore = function() {
-  if(fauxJax._installed) {
-    fauxJax.restore()
-  }
-  return this
-}
-
-XMock.prototype.install = function(opts) {
-  this.opts = opts || {}
-  this.listenToFauxJax()
-  return this
-}
-
-XMock.prototype.listenToFauxJax = function() {
-  var self = this
-  if(this._requestListener) {
-    fauxJax.removeListener('request', this._requestListener)
-  }
-  this._requestListener = setupFauxJax(function(req,res) {
-    self.dispatch(req,res)
-  })
-}
-
-XMock.prototype.fallback = function(req,res) {
-  if(this.opts.unhandled) {
-    return this.opts.unhandled(req,res)
-  }
-  throw new Error('Unhandled request in xmock: ' + req.method.toUpperCase() + ' ' +req.url)
-}
 
 XMock.prototype.use = function(first, second) {
   var path = '*'
@@ -152,14 +132,14 @@ XMock.prototype.dispatch = function(req, res) {
     var returned = fn(req, res, nextEnter)
 
     // Handle shortcut method of return an object-or-array instead of using res.send
-    if(isArray(returned)) {
+    if(Helpers.isType(returned, 'array')) {
 
       res.status(returned[0])
       res.set(returned[2])
       res.send(returned[1])
 
       return
-    } else if(isObject(returned)) {
+    } else if(Helpers.isType(returned, 'object')) {
       return res.send(returned)
     }
 
@@ -168,20 +148,38 @@ XMock.prototype.dispatch = function(req, res) {
   nextEnter();
 }
 
-function isObject(test) {
-  return test && typeof test === 'object'
+XMock.prototype.fallback = function(req,res) {
+  if(this.opts.unhandled) {
+    return this.opts.unhandled(req,res)
+  }
+  throw new Error('Unhandled request in xmock: ' + req.method.toUpperCase() + ' ' +req.url)
 }
 
-function isArray(test) {
-  return Array.isArray(test)
+///////////////////////////////////////////////////////////////////////////////
+//
+// ===== functions
+
+function setupFauxJax(cb) {
+  if(!Mocker._installed) {
+    Mocker.install()
+  }
+
+  var listener = function(req) {
+    var end = function() { req.respond.apply(req, arguments) }
+    cb(req, new Response(end))
+  }
+
+  Mocker.on('request', listener)
+  return listener
 }
+
 
 function mutateRequest(req) {
   req.url = req.requestURL
   req.method = req.requestMethod.toLowerCase()
 
   req.header = req.requestHeaders
-  lowerCaseKeys(req.header)
+  Helpers.lowerCaseKeys(req.header)
 
   req.body = req.requestBody
   if(/json$/.test(req.header['content-type'])) {
@@ -189,130 +187,9 @@ function mutateRequest(req) {
   }
 
   var urlParsed = urlApi.parse(req.url, true)
-  helpers.merge(req, urlParsed)
+  Helpers.merge(req, urlParsed)
 
   return req
 }
 
-function lowerCaseKeys(obj) {
-  for(var key in  obj) {
-    if(hasOwnProperty.call(obj, key)) {
-      var val = obj[key]
-      delete obj[key]
-      obj[key.toLowerCase()] = val
-    }
-  }
-  return obj
-}
 
-function Response(respond) {
-  this.body = {}
-  this.header = {
-    'Content-type': 'application/json'
-  }
-  this.code = 200
-  this._respond = respond
-}
-
-Response.prototype.end = function() {
-  var bodyStr = (typeof this.body === 'object') ? JSON.stringify(this.body) : this.body
-
-  this._respond(this.code, this.header, bodyStr)
-}
-
-Response.prototype.status = function(code) {
-  this.code = code
-  return this
-}
-
-Response.prototype.send = function(body) {
-  this.body = body
-  this.end()
-}
-
-Response.prototype.set = function(header, value) {
-  if(header && typeof header === 'object') {
-    helpers.merge(this.header, header)
-  } else {
-    this.header[header] = value
-  }
-  return this
-}
-
-function Route(path, method) {
-    this.path = (path === '*') ? '(.*)' : path
-    this.regexp = pathToRegexp(this.path, this.keys = [], {end: false})
-    this.method = method
-    this.matchQueryString = helpers.hasQueryString(path)
-    this.fullUrl = helpers.isFullUrl(path)
-  }
-
-  /**
-   * Return route middleware with
-   * the given callback `fn()`.
-   *
-   * @param {Function} fn
-   * @return {Function}
-   * @api public
-   */
-
-  Route.prototype.middleware = function(fn) {
-    var self = this;
-    return function(req,res,next) {
-      var url
-      if(!self.fullUrl) {
-
-        url = req.pathname
-
-        if(self.matchQueryString) {
-          url = req.path
-        }
-
-      } else {
-        url = req.url
-      }
-
-
-      // Match method... /if/ its there
-      if(self.method && self.method !== req.method) {
-        return next()
-      }
-
-      var m = self.match(url)
-
-      if (m) {
-        req.params = m
-        return fn(req,res,next);
-      }
-      next()
-    }
-  }
-
-  /**
-   * Check if this route matches `path`, if so
-   * populate `params`.
-   *
-   * @param {String} path
-   * @param {Object} params
-   * @return {Boolean}
-   * @api private
-   */
-
-  Route.prototype.match = function(path) {
-    var keys = this.keys
-      , m = this.regexp.exec(path)
-      , params = {}
-
-
-    if (!m) return false;
-
-    for (var i = 1, len = m.length; i < len; ++i) {
-      var key = keys[i - 1];
-      var val = m[i];
-      if (val !== undefined || !(hasOwnProperty.call(params, key.name))) {
-        params[key.name] = val;
-      }
-    }
-
-    return params
-  }

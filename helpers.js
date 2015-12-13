@@ -2,7 +2,9 @@
 module.exports = {
   merge: merge,
   isFullUrl: isFullUrl,
-  hasQueryString: hasQueryString
+  hasQueryString: hasQueryString,
+  lowerCaseKeys: lowerCaseKeys,
+  isType: isType
 }
 
 function merge(dest, src) {
@@ -13,6 +15,10 @@ function merge(dest, src) {
       }
     }
   }
+}
+
+function isType(test, type) {
+  return Object.prototype.toString.call(test).toLowerCase() === '[object '+type+']'
 }
 
 function isFullUrl(expressLike) {
@@ -51,4 +57,16 @@ function hasQueryString(expressLike) {
   }
 
 }
+
+function lowerCaseKeys(obj) {
+  for(var key in  obj) {
+    if(hasOwnProperty.call(obj, key)) {
+      var val = obj[key]
+      delete obj[key]
+      obj[key.toLowerCase()] = val
+    }
+  }
+  return obj
+}
+
 

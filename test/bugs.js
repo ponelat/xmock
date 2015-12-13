@@ -1,7 +1,7 @@
 var expect = require('chai').expect
 var xmock = require('../')
 var request = require('superagent')
-var fauxJax = require('faux-jax')
+var Mocker = require('../mocker')
 var async = require('async')
 
 var tooManyListeners = 4
@@ -13,8 +13,8 @@ describe('xmock - bugs', function() {
     before(function(){
       var self = this
       this.events = {}
-      fauxJax.setMaxListeners(tooManyListeners-1)
-      fauxJax.on('newListener', function(ev) { self.events[ev] = true })
+      Mocker.setMaxListeners(tooManyListeners-1)
+      Mocker.on('newListener', function(ev) { self.events[ev] = true })
       this.xapp = xmock()
     })
 
@@ -50,7 +50,7 @@ describe('xmock - bugs', function() {
 
       function listenerCheck(cb) {
         for(var ev in events) {
-          var len = fauxJax.listeners(ev).length
+          var len = Mocker.listeners(ev).length
           expect(len).to.be.below(tooManyListeners, 'too many "'+ev+'" listeners')
         }
         cb()
