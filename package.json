@@ -29,7 +29,7 @@
   },
   "homepage": "https://github.com/ponelat/xmock#readme",
   "dependencies": {
-    "mitm": "^1.2.0",
+    "faux-jax": "ponelat/faux-jax",
     "path-to-regexp": "^1.2.1"
   },
   "devDependencies": {

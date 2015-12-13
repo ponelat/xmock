@@ -1,7 +1,7 @@
 var expect = require('chai').expect
 var xmock = require('../')
 var request = require('superagent')
-var Mocker = require('../mocker')
+var Mocker = require('faux-jax')
 var async = require('async')
 
 var tooManyListeners = 4

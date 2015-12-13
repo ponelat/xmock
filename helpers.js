@@ -1,10 +1,13 @@
+var Url = require('url')
 
 module.exports = {
   merge: merge,
   isFullUrl: isFullUrl,
   hasQueryString: hasQueryString,
   lowerCaseKeys: lowerCaseKeys,
-  isType: isType
+  isType: isType,
+  zip: zip,
+  matchDomain: matchDomain
 }
 
 function merge(dest, src) {
@@ -67,6 +70,49 @@ function lowerCaseKeys(obj) {
     }
   }
   return obj
+}
+
+function corerceIntoUrlObj(str) {
+  str = typeof str === 'string' ? str : ''
+  if(!/^https?:\/\//.test(str)) {
+    str = 'http://' + str
+  }
+  return Url.parse(str)
+}
+
+function matchDomain(host, testHost) {
+
+  host = corerceIntoUrlObj(host).host
+  testHost = corerceIntoUrlObj(testHost).host
+
+  // Design Decision, don't match empty
+  if(host === '') {
+    return false
+  }
+
+  if(host === testHost) {
+    return true
+  }
+
+  var hostDomain = host.split('.').reverse()
+  var testHostDomain = testHost.split('.').reverse()
+
+  var len = host.length
+  for (var i = 0; i < len; i++) {
+    if(host[i] !== testHost[i])
+      return false
+  }
+
+  return true
+}
+
+function zip(left, right, fn) {
+  var len = Math.min(left.length, right.length)
+  var newArr = []
+  for (var i = 0; i < len; i++) {
+    fn ? newArr.push(fn(left[i], right[i])) : null
+  }
+  return newArr
 }
 
 

@@ -1,4 +1,4 @@
-var Mocker = require('./mocker')
+var Mocker = require('faux-jax')
 var urlApi = require('url')
 var Helpers = require('./helpers.js')
 var Route = require('./route.js')
@@ -23,6 +23,7 @@ function XMock() {
   this._callbacks = []
   this._requestListener = null
   this._class = XMock
+  this._bypass = []
 }
 
 XMock.prototype.reset = function(fn) {
@@ -44,12 +45,24 @@ XMock.prototype.install = function(opts) {
 
 XMock.prototype.listenToFauxJax = function() {
   var self = this
-  if(this._requestListener) {
-    Mocker.removeListener('request', this._requestListener)
+  if(this._destroy) {
+    this._destroy()
   }
-  this._requestListener = setupFauxJax(function(req,res) {
-    self.dispatch(req,res)
+  this._destroy = setupMockListener({
+    request: function (req,res) {
+      self.dispatch(req,res)
+    },
+    connect: function (socket, opts) {
+      self._bypass.forEach(function (host) {
+        Helpers.matchDomain(host, opts.host) ? socket.bypass() : null
+      })
+    }
   })
+}
+
+XMock.prototype.bypass = function (host) {
+  this._bypass.push(host)
+  return this
 }
 
 // 'patch' doesn't work in firefox (at least)
@@ -159,18 +172,29 @@ XMock.prototype.fallback = function(req,res) {
 //
 // ===== functions
 
-function setupFauxJax(cb) {
+function setupMockListener(opts) {
+  var opts = opts || {}
+  var oriNewSocket = Mocker._newSocket
+
+  Mocker._newSocket = function (socket, socket_opts) {
+    opts.connect ? opts.connect(socket,socket_opts) : null
+  }
+
   if(!Mocker._installed) {
     Mocker.install()
   }
 
   var listener = function(req) {
     var end = function() { req.respond.apply(req, arguments) }
-    cb(req, new Response(end))
+    opts.request ? opts.request(req, new Response(end)) : null
   }
 
   Mocker.on('request', listener)
-  return listener
+
+  return function restore() {
+    Mocker.removeListener('request', listener)
+    Mocker._newSocker = oriNewSocket
+  }
 }
 
 
