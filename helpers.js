@@ -2,7 +2,8 @@
 module.exports = {
   merge: merge,
   isFullUrl: isFullUrl,
-  hasQueryString: hasQueryString
+  hasQueryString: hasQueryString,
+  getAppropriateUrl: getAppropriateUrl
 }
 
 function merge(dest, src) {
@@ -51,4 +52,19 @@ function hasQueryString(expressLike) {
   }
 
 }
+
+/**
+ * Extracts the url we'd like to test against, based implicitly on pathlike
+ * Eg: if pathlike is a full url, we'd like to test against the full url
+ */
+function getAppropriateUrl(req,pathlike) {
+  if(isFullUrl(pathlike)) {
+    return req.url
+  }
+  if(hasQueryString(pathlike)) {
+    return req.path
+  }
+  return req.pathname
+}
+
 

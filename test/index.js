@@ -46,7 +46,24 @@ describe('xmock - init', function(){
         })
       },
 
+      function (cb) {
+        xapp.restore()
+        cb()
+      }
+
     ],done)
+
+  })
+
+  describe('.restore()', function(){
+
+    it('should allow normal requests to go through', function(done){
+      xmock().restore()
+      request('/abc').end(function(err,res) {
+        expect(err).to.match(/ECONNREFUSED/)
+        done()
+      })
+    })
 
   })
 })
@@ -66,25 +83,6 @@ describe('xmock', function() {
   })
 
   describe('basics', function(){
-
-    // Deprecating
-    it.skip('should throw if no body', function(done){
-
-      request.get('/api').end(function(err, res) {
-        done(new Error('Should have thown an error'))
-      })
-
-      this.xapp.use(function(req,res,next){
-        try {
-          res.status(201).send('')
-        } catch(e) {
-          expect(e+'').to.equal('Error: No body provided in response')
-          done()
-        }
-
-      })
-
-    })
 
     it('should not have zombie middleware', function(done){
 
@@ -170,7 +168,7 @@ describe('xmock', function() {
 
     })
 
-    it('should allow a simple end of response with res.end()', function(done){
+    it('should allow a simple end of 200,{} response with res.end()', function(done){
 
       this.xapp.get('/api', function(req,res) {
         res.end()
@@ -178,6 +176,7 @@ describe('xmock', function() {
 
       request.get('/api').end(function(err,res) {
         expect(res.statusCode).to.eql(200)
+        expect(res.body).to.eql({})
         done()
       })
 
@@ -530,6 +529,23 @@ describe('xmock', function() {
           .end(cb)
         }
       ],done)
+
+    })
+
+    it.skip('should bypass explicitly set paths/urls', function(done){
+
+      this.xapp.bypass('/api')
+
+      // Should not call this
+      this.xapp.get('/api', function(req,res,next) {
+        return {hello: true}
+      })
+
+      request.get('/api', function(err,res) {
+        expect(res.statusCode).to.not.equal(200)
+        expect(err+'').to.match(/ECONNREFUSED/)
+        done()
+      })
 
     })
 

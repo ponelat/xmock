@@ -1,7 +1,7 @@
 var fauxJax = require('faux-jax')
 var pathToRegexp = require('path-to-regexp')
 var urlApi = require('url')
-var helpers = require('./helpers.js')
+var Helpers = require('./helpers.js')
 
 module.exports = xmock
 
@@ -14,19 +14,30 @@ function xmock() {
   return singleton
 }
 
-// ===== functions
-
-function setupFauxJax(cb) {
+var _requestListener
+var _socketListener
+var listeners = []
+function setupFauxJax(cb, socketCb) {
   if(!fauxJax._installed) {
     fauxJax.install()
   }
 
-  var listener = function(req) {
-    var end = function() { req.respond.apply(req, arguments) }
-    cb(req, new Response(end))
+  if(listeners.length) {
+    listeners.forEach(function () {
+
+    })
+  }
+  _socketListener = function(socket) {
+    if(socketCb)
+      socketCb(socket)
+  }
+
+  _requestListener = function(req) {
+    cb(req, new Response(req.respond.bind(req)))
   }
 
   fauxJax.on('request', listener)
+  fauxJax.on('socket', socketListener)
   return listener
 }
 
@@ -34,6 +45,7 @@ function setupFauxJax(cb) {
 
 function XMock() {
   this._callbacks = []
+  this._bypass = []
   this._requestListener = null
   this.install()
 }
@@ -75,18 +87,19 @@ XMock.prototype.restore = function() {
 }
 
 XMock.prototype.install = function() {
-  this.listenToFauxJax()
-  return this
-}
-
-XMock.prototype.listenToFauxJax = function() {
   var self = this
+
   if(this._requestListener) {
     fauxJax.removeListener('request', this._requestListener)
   }
+
   this._requestListener = setupFauxJax(function(req,res) {
     self.dispatch(req,res)
+  }, function (socket, opts) {
+    // self.tryBypass(socket, opts)
   })
+
+  return this
 }
 
 XMock.prototype.fallback = function(req,res) {
@@ -121,6 +134,17 @@ XMock.prototype.use = function(first, second) {
 
 }
 
+XMock.prototype.bypass = function(method, path) {
+
+  if(!path) {
+    path = method
+    method = ''
+  }
+
+  this._bypass.push({path: path, method: method})
+  return this
+}
+
 XMock.prototype.middleware = function(opts) {
   var self = this
   var path = opts.path || '*'
@@ -135,10 +159,34 @@ XMock.prototype.middleware = function(opts) {
   return this
 }
 
+function matchPathlike(req, pathlike) {
+  var regx = pathToRegexp(pathlike)
+  var url = Helpers.getAppropriateUrl(req, pathlike)
+  return regx.test(url)
+}
+
+XMock.prototype.shouldBypass = function(req) {
+
+  if(!this._bypass || this._bypass.length <= 0) {
+    return false
+  }
+
+  for (var i = 0, len = this._bypass.length; i < len; i++) {
+    var obj = this._bypass[i]
+    if(matchPathlike(req, obj.path)) {
+      return true
+    }
+  }
+}
+/**
+ * The Middleware loop
+ *
+ */
 XMock.prototype.dispatch = function(req, res) {
   var i = 0, j = 0;
   var self = this
-  req = mutateRequest(req)
+
+  mutateRequest(req)
 
   function nextEnter() {
 
@@ -188,7 +236,7 @@ function mutateRequest(req) {
   }
 
   var urlParsed = urlApi.parse(req.url, true)
-  helpers.merge(req, urlParsed)
+  Helpers.merge(req, urlParsed)
 
   return req
 }
@@ -219,6 +267,10 @@ Response.prototype.end = function() {
   this._respond(this.code, this.header, bodyStr)
 }
 
+Response.prototype.type = function(type) {
+  this.header['Content-type'] = type
+}
+
 Response.prototype.status = function(code) {
   this.code = code
   return this
@@ -231,7 +283,7 @@ Response.prototype.send = function(body) {
 
 Response.prototype.set = function(header, value) {
   if(header && typeof header === 'object') {
-    helpers.merge(this.header, header)
+    Helpers.merge(this.header, header)
   } else {
     this.header[header] = value
   }
@@ -239,75 +291,63 @@ Response.prototype.set = function(header, value) {
 }
 
 function Route(path, method) {
-    this.path = (path === '*') ? '(.*)' : path
-    this.regexp = pathToRegexp(this.path, this.keys = [], {end: false})
-    this.method = method
-    this.matchQueryString = helpers.hasQueryString(path)
-    this.fullUrl = helpers.isFullUrl(path)
-  }
+  this.path = (path === '*') ? '(.*)' : path
+  this.regexp = pathToRegexp(this.path, this.keys = [], {end: false})
+  this.method = method
 
-  /**
-   * Return route middleware with
-   * the given callback `fn()`.
-   *
-   * @param {Function} fn
-   * @return {Function}
-   * @api public
-   */
+  this.matchQueryString = Helpers.hasQueryString(path)
+  this.fullUrl = Helpers.isFullUrl(path)
+}
 
-  Route.prototype.middleware = function(fn) {
-    var self = this;
-    return function(req,res,next) {
-      var url
-      if(!self.fullUrl) {
+/**
+ * Return route middleware with
+ * the given callback `fn()`.
+ *
+ * @param {Function} fn
+ * @return {Function}
+ * @api public
+ */
+Route.prototype.middleware = function(fn) {
+  var self = this;
+  return function(req,res,next) {
 
-        url = req.pathname
+    var url = Helpers.getAppropriateUrl(req,self.path)
 
-        if(self.matchQueryString) {
-          url = req.path
-        }
-
-      } else {
-        url = req.url
-      }
-
-
-      // Match method... /if/ its there
-      if(self.method && self.method !== req.method) {
-        return next()
-      }
-
-      var m = self.match(url)
-
-      if (m) {
-        req.params = m
-        return fn(req,res,next);
-      }
-      next()
+    // Match method... /if/ its there
+    if(self.method && self.method !== req.method) {
+      return next()
     }
+
+    var matches = self.regexp.exec(url)
+    if(!matches) {
+      return next()
+    }
+
+    var params = self.extractParams(matches)
+    req.params =params
+    return fn(req,res,next);
+
   }
+}
 
   /**
-   * Check if this route matches `path`, if so
-   * populate `params`.
+   * Extract the params from a regexp matches array
    *
-   * @param {String} path
-   * @param {Object} params
-   * @return {Boolean}
+   * @param {Array} matches
+   * @return {Object}
    * @api private
    */
 
-  Route.prototype.match = function(path) {
+  Route.prototype.extractParams = function(matches) {
     var keys = this.keys
-      , m = this.regexp.exec(path)
       , params = {}
 
 
-    if (!m) return false;
+    if (!matches) return false;
 
-    for (var i = 1, len = m.length; i < len; ++i) {
+    for (var i = 1, len = matches.length; i < len; ++i) {
       var key = keys[i - 1];
-      var val = m[i];
+      var val = matches[i];
       if (val !== undefined || !(hasOwnProperty.call(params, key.name))) {
         params[key.name] = val;
       }
