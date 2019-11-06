@@ -44,7 +44,7 @@
     "karma-webpack": "^1.7.0",
     "lodash": "^3.10.1",
     "mocha": "^2.3.3",
-    "superagent": "^1.4.0",
+    "superagent": "^5.1.0",
     "watch-run": "^1.2.2",
     "webpack": "^1.12.2"
   }
